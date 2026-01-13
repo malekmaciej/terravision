@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y \
     graphviz \
     git \
     curl \
-    wget \
     unzip \
     ca-certificates \
     && update-ca-certificates \
@@ -28,7 +27,7 @@ RUN case ${TARGETARCH} in \
     "arm64")  TERRAFORM_ARCH=arm64  ;; \
     *)        echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
     esac && \
-    wget --no-check-certificate "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip" -O terraform.zip && \
+    curl -fsSL "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_${TERRAFORM_ARCH}.zip" -o terraform.zip && \
     unzip terraform.zip -d /usr/local/bin/ && \
     rm terraform.zip && \
     chmod +x /usr/local/bin/terraform
@@ -41,6 +40,8 @@ COPY requirements.txt pyproject.toml README.md ./
 COPY poetry.lock* ./
 
 # Install Python dependencies
+# Note: In production builds, --trusted-host flags should not be needed.
+# They are used here to handle corporate proxy/firewall scenarios.
 RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -r requirements.txt
 
 # Copy application code
@@ -52,6 +53,8 @@ COPY hcl2/ ./hcl2/
 COPY shiftLabel.gvpr override.tf terravision.bat ./
 
 # Install terravision package
+# Note: In production builds, --trusted-host flags should not be needed.
+# They are used here to handle corporate proxy/firewall scenarios.
 RUN pip install --no-cache-dir --trusted-host pypi.org --trusted-host files.pythonhosted.org -e .
 
 # Create workspace directory

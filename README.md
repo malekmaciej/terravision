@@ -113,15 +113,17 @@ pipx install terravision # only if in a virtual env, you can use pip install ter
 
 TerraVision is available as a multi-architecture Docker image supporting both `linux/amd64` and `linux/arm64` platforms (including Apple Silicon M1/M2/M3).
 
+**Note**: Replace `YOUR_DOCKERHUB_USERNAME` with the actual DockerHub username where the terravision image is published. If building your own image, use your own DockerHub username.
+
 ```bash
 # Pull the latest image
-docker pull <dockerhub-username>/terravision:latest
+docker pull YOUR_DOCKERHUB_USERNAME/terravision:latest
 
 # Run terravision with Docker
-docker run --rm -v $(pwd):/workspace <dockerhub-username>/terravision:latest --version
+docker run --rm -v $(pwd):/workspace YOUR_DOCKERHUB_USERNAME/terravision:latest --version
 
 # Generate a diagram from your Terraform code
-docker run --rm -v $(pwd):/workspace <dockerhub-username>/terravision:latest draw --source /workspace
+docker run --rm -v $(pwd):/workspace YOUR_DOCKERHUB_USERNAME/terravision:latest draw --source /workspace
 
 # Pass cloud credentials to the container (for Terraform to validate resources)
 docker run --rm \
@@ -129,7 +131,7 @@ docker run --rm \
   -e AWS_ACCESS_KEY_ID \
   -e AWS_SECRET_ACCESS_KEY \
   -e AWS_REGION \
-  <dockerhub-username>/terravision:latest draw --source /workspace
+  YOUR_DOCKERHUB_USERNAME/terravision:latest draw --source /workspace
 ```
 
 **Note**: When using Docker, mount your Terraform code directory to `/workspace` in the container. The Docker image includes all dependencies (Python, Terraform, Graphviz, Git) pre-installed.
@@ -345,6 +347,8 @@ jobs:
 
 You can also use the Docker image in your CI/CD pipelines:
 
+**Note**: Replace `YOUR_DOCKERHUB_USERNAME` with the actual DockerHub username where the terravision image is published.
+
 ```yaml
 # .github/workflows/architecture-diagrams-docker.yml
 name: Update Architecture Diagrams (Docker)
@@ -366,7 +370,7 @@ jobs:
             -e AWS_ACCESS_KEY_ID \
             -e AWS_SECRET_ACCESS_KEY \
             -e AWS_REGION \
-            <dockerhub-username>/terravision:latest \
+            YOUR_DOCKERHUB_USERNAME/terravision:latest \
             draw --source /workspace --format svg --outfile architecture
       - name: Commit Diagrams
         run: |
