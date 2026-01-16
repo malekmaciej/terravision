@@ -103,9 +103,38 @@ Before installing TerraVision, ensure you have:
 
 ### Install TerraVision
 
+#### Option 1: Using pip (Recommended)
+
 ```bash
 pipx install terravision # only if in a virtual env, you can use pip install terravision instead
 ```
+
+#### Option 2: Using Docker
+
+TerraVision is available as a multi-architecture Docker image supporting both `linux/amd64` and `linux/arm64` platforms (including Apple Silicon M1/M2/M3).
+
+**Note**: Replace `YOUR_DOCKERHUB_USERNAME` with the actual DockerHub username where the terravision image is published. If building your own image, use your own DockerHub username.
+
+```bash
+# Pull the latest image
+docker pull YOUR_DOCKERHUB_USERNAME/terravision:latest
+
+# Run terravision with Docker
+docker run --rm -v $(pwd):/workspace YOUR_DOCKERHUB_USERNAME/terravision:latest --version
+
+# Generate a diagram from your Terraform code
+docker run --rm -v $(pwd):/workspace YOUR_DOCKERHUB_USERNAME/terravision:latest draw --source /workspace
+
+# Pass cloud credentials to the container (for Terraform to validate resources)
+docker run --rm \
+  -v $(pwd):/workspace \
+  -e AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY \
+  -e AWS_REGION \
+  YOUR_DOCKERHUB_USERNAME/terravision:latest draw --source /workspace
+```
+
+**Note**: When using Docker, mount your Terraform code directory to `/workspace` in the container. The Docker image includes all dependencies (Python, Terraform, Graphviz, Git) pre-installed.
 
 ### Verify Terraform Setup
 
@@ -313,6 +342,58 @@ jobs:
           git commit -m "Update architecture diagrams" || exit 0
           git push
 ```
+
+### Using Docker in CI/CD
+
+You can also use the Docker image in your CI/CD pipelines:
+
+**Note**: Replace `YOUR_DOCKERHUB_USERNAME` with the actual DockerHub username where the terravision image is published.
+
+```yaml
+# .github/workflows/architecture-diagrams-docker.yml
+name: Update Architecture Diagrams (Docker)
+
+on:
+  push:
+    branches: [main]
+    paths: ['**.tf']
+
+jobs:
+  generate-diagrams:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Generate Diagrams with Docker
+        run: |
+          docker run --rm \
+            -v $(pwd):/workspace \
+            -e AWS_ACCESS_KEY_ID \
+            -e AWS_SECRET_ACCESS_KEY \
+            -e AWS_REGION \
+            YOUR_DOCKERHUB_USERNAME/terravision:latest \
+            draw --source /workspace --format svg --outfile architecture
+      - name: Commit Diagrams
+        run: |
+          git config user.name "GitHub Actions"
+          git add architecture.*
+          git commit -m "Update architecture diagrams" || exit 0
+          git push
+```
+
+### Building Multi-Architecture Docker Images
+
+The repository includes a GitHub Actions workflow for building and pushing multi-architecture Docker images to DockerHub. To use it:
+
+1. Set up DockerHub secrets in your repository:
+   - `DOCKERHUB_USERNAME`: Your DockerHub username
+   - `DOCKERHUB_TOKEN`: Your DockerHub access token
+
+2. Trigger the workflow manually from the Actions tab:
+   - Go to "Actions" → "Build and Push Docker Image"
+   - Click "Run workflow"
+   - Enter the desired Docker tag (e.g., `latest`, `v0.10.2`)
+
+The workflow will build images for both `linux/amd64` and `linux/arm64` platforms and push them to DockerHub.
 
 **More CI/CD examples**: See [docs/CICD_INTEGRATION.md](docs/CICD_INTEGRATION.md)
 
